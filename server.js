@@ -14,24 +14,25 @@ app.use(cors());
 app.use(express.json());
 
 io.on('connection', (socket) => {
+  socket.on('disconnect', () => {
+    console.log('user disconnected');
+  });
+
   socket.on('subscribe', (room) => {
     console.log(`Entrou na sala ${room}`);
     socket.join(room);
   });
-});
 
-app.post('/message/send', (req, res) => {
-  const { receiverId, senderId, message } = req.body;
-
-    console.log(`Enviando mensagem para o usuário: ${receiverId}`);
-
-    io.to(`app_chat_user_${receiverId}`).emit('newMessage', {
-      friend_id: senderId,
-      message: message,
-      groupId: null,
+  socket.on('sendMessage', (msg) => {
+    io.to(`app_chat_user_${msg.receiver_id}`).emit('newMessage', {
+      friend_id: msg.friend_id,
+      message: msg.message
     });
 
-  res.status(200).send('success');
+    app.post('/message/send', (req, res) => {
+      res.status(200).send('success');
+    });
+  });
 });
 
 server.listen(7000, () => {
